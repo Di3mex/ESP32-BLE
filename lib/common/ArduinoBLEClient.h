@@ -16,8 +16,8 @@ class ArduinoBLEClient : public BLEAdvertisedDeviceCallbacks {
   public:
     const std::string SUPPORTED_PERIPHERALS[3] = {"FSR-PERIPHERAL", "BTN-PERIPHERAL", "EMG-PERIPHERAL"};
 
-    const std::string BLE_TRIGGER_SERVICE_UUID = "19B10000-E8F2-537E-4F6C-D104768A1214";
-    const std::string BLE_TRIGGER_CHARACTERISTIC_UUID = "19B10001-E8F2-537E-4F6C-D104768A1214";
+    const std::string BLE_TRIGGER_SERVICE_UUID = "000000ff-0000-1000-8000-00805f9b34fb";
+    const std::string BLE_TRIGGER_CHARACTERISTIC_UUID = "0000ff01-0000-1000-8000-00805f9b34fb";
 
     ArduinoBLEClient();
     ~ArduinoBLEClient();

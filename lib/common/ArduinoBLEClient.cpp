@@ -15,6 +15,7 @@ using std::string;
 
 bool doConnect;
 bool connected;
+bool searchFinished;
 // Address of the peripheral device. Address will be found during scanning...
 static BLEAddress *pServerAddress;
 
@@ -35,6 +36,7 @@ const uint8_t notificationOff[] = {0x0, 0x0};
 
 void ArduinoBLEClient::setup() {
     Serial.println("Setting up BLEClient");
+    BLEDevice::setPower(ESP_PWR_LVL_P7);
     BLEDevice::init("");
 
     serviceUUID = BLEUUID::fromString(BLE_TRIGGER_SERVICE_UUID);
@@ -46,7 +48,8 @@ void ArduinoBLEClient::setup() {
     BLEScan *pBLEScan = BLEDevice::getScan();
     pBLEScan->setAdvertisedDeviceCallbacks(this);
     pBLEScan->setActiveScan(true);
-    pBLEScan->start(30);
+    pBLEScan->start(30, false);
+    searchFinished = true;
 }
 
 // When the BLE Server sends a new temperature reading with the notify property
@@ -59,19 +62,25 @@ static void triggerNotifyCallback(BLERemoteCharacteristic *pBLERemoteCharacteris
 
 // Connect to the BLE Server that has the name, Service, and Characteristics
 bool ArduinoBLEClient::connectToServer(BLEAddress pAddress) {
-
+    // Block
+    while (!searchFinished) {
+        delay(100);
+    }
     Serial.println("Creating client");
     BLEClient *pClient = BLEDevice::createClient();
 
     Serial.println("Created Client");
+    delay(1000);
 
     // Connect to the remove BLE Server.
     pClient->connect(pAddress);
     Serial.println("Connected to server");
+    delay(1000);
 
     std::map<std::string, BLERemoteService *> *services = pClient->getServices();
     Serial.println("Begin listing services");
     std::map<std::string, BLERemoteService *>::iterator it_c = services->begin();
+    delay(100);
 
     Serial.println("[ArduinoBLEClient] List Characteristics");
 
@@ -83,18 +92,22 @@ bool ArduinoBLEClient::connectToServer(BLEAddress pAddress) {
 
     // Obtain a reference to the service we are after in the remote BLE server.
     BLERemoteService *pRemoteService = pClient->getService(serviceUUID);
-    Serial.println("Gotten service");
+    Serial.print("Our service UUID ");
+    Serial.println(serviceUUID.toString().c_str());
     if (pRemoteService == nullptr) {
         Serial.print("Failed to find our service UUID: ");
         Serial.println(serviceUUID.toString().c_str());
         return (false);
     }
+    Serial.println("Gotten service");
+    delay(100);
 
     Serial.println("Begin listing characteristics");
     std::map<std::string, BLERemoteCharacteristic *> *characteristics = pRemoteService->getCharacteristics();
     std::map<std::string, BLERemoteCharacteristic *>::iterator it = characteristics->begin();
 
     Serial.println("[ArduinoBLEClient] List Characteristics");
+    delay(100);
 
     while (it != characteristics->end()) {
         Serial.println(it->first.c_str());
@@ -102,7 +115,9 @@ bool ArduinoBLEClient::connectToServer(BLEAddress pAddress) {
         it++;
     }
 
-    triggerCharacteristic = pRemoteService->getCharacteristic(BLE_TRIGGER_CHARACTERISTIC_UUID);
+    triggerCharacteristic = pRemoteService->getCharacteristic(triggerUUID);
+    Serial.print("Our characteristic UUID ");
+    Serial.println(triggerUUID.toString().c_str());
 
     if (triggerCharacteristic == nullptr) {
         Serial.print("Failed to find our characteristic UUID");
